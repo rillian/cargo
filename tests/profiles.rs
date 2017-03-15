@@ -104,6 +104,39 @@ url = p.url()
 )));
 }
 
+#[test]
+fn release_debug_assertions() {
+    let mut p = project("foo");
+
+    p = p
+        .file("Cargo.toml", r#"
+            [package]
+            name = "test"
+            version = "0.0.0"
+            authors = []
+
+            [profile.release]
+            debug-assertions = true
+        "#)
+        .file("src/lib.rs", "");
+    assert_that(p.cargo_process("build").arg("-v").arg("--release"),
+                execs().with_status(0).with_stderr(&format!("\
+[COMPILING] test v0.0.0 ({url})
+[RUNNING] `rustc --crate-name test src[/]lib.rs --crate-type lib \
+        --emit=dep-info,link \
+        -C opt-level=3 \
+        -C debug-assertions=on \
+        -C metadata=[..] \
+        -C extra-filename=[..] \
+        --out-dir [..] \
+        -L dependency={dir}[/]target[/]release[/]deps`
+[FINISHED] [..] target(s) in [..]
+",
+dir = p.root().display(),
+url = p.url()
+)));
+}
+
 fn check_opt_level_override(profile_level: &str, rustc_level: &str) {
     let mut p = project("foo");
     p = p
